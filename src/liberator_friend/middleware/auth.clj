@@ -11,9 +11,12 @@
   (let [friend-m {:credential-fn (partial creds/bcrypt-credential-fn users)
                   :workflows
                   ;; Note that ordering matters here. Basic first.
-                  [(workflows/http-basic :realm "/")
+                  [
+                   ; (workflows/http-basic :realm "/") disabled for cently
                    ;; The tutorial doesn't use this one, but you
                    ;; probably will.
                    (workflows/interactive-form)]}]
     (-> handler
-        (friend/authenticate friend-m))))
+        (friend/authenticate friend-m)
+        ; (friend/requires-scheme-with-proxy :https)
+        )))

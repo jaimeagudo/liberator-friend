@@ -9,6 +9,9 @@
                  [liberator "0.10.0"]
                  [compojure "1.1.5"]
                  [http-kit "2.1.13"]
+                 [cheshire "5.1.1"]
                  [ring/ring-jetty-adapter "1.1.0"]
                  [ring/ring-devel "1.2.0"]
-                 [hiccup "1.0.1"]])
+                 [org.clojure/clojure-contrib "1.2.0"]
+                 ; [hiccup "1.0.1"]
+                 ])
