@@ -1,6 +1,8 @@
 (ns liberator-friend.core
   "Core namespace for the liberator-friend post."
-  (:use [liberator-friend.users])
+  (:use [liberator-friend.users]
+; https://github.com/ngrunwald/ring-middleware-format
+)
   (:require [cheshire.core :refer :all]
     [compojure.handler :refer [api]]
     [compojure.core :as compojure :refer (GET ANY defroutes)]
@@ -12,6 +14,7 @@
     ))
 
 ;; ## Site Resources
+
 
 (defresource admin-resource
   :base (r/role-auth #{:admin})
@@ -31,6 +34,7 @@
   :available-media-types ["application/json"]
   :handle-ok (fn [ctxt] (generate-string "Come on in. You're authenticated.")))
 
+
 ;; ## Compojure Routes
 
 (defroutes site-routes
@@ -44,9 +48,11 @@
 (def site
   "Main handler for the example Compojure site."
   (-> site-routes
+    ; Consider this before enable wrap-json https://groups.google.com/forum/#!searchin/clojure-liberator/wrap/clojure-liberator/RaiM6UtkYCk/seNrmtflgL4J
+    ; (wrap-json-params)
     (auth/friend-middleware users)
-       ; (friend/requires-scheme-with-proxy :https)
-       (api)))
+    ; (friend/requires-scheme-with-proxy :https)
+    (api)))
 
 ;; ## Server Lifecycle
 

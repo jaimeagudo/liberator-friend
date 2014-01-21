@@ -17,23 +17,48 @@
 (generate-string 401)))
             ; (l/json-response 401)))
 
+; (defn json-workflow
+;   [& {:keys [login-uri credential-fn login-failure-handler redirect-on-auth?] :as auth-config
+;       :or {redirect-on-auth? true}}]
+;       (fn   [{:keys [uri request-method body] :as req}]
+;   (when (and (= uri (:login-uri (::friend/auth-config req)))
+;              (= :post request-method)
+;              (= "application/json" (:content-type req)))
+;     (let [{:keys [username password] :as creds} (parse-json-stream body)
+;           creds (with-meta creds  {::friend/workflow :json-login})
+;           cred-fn (:credential-fn (::friend/auth-config req))]
+;       (if-let [user-record (and username password
+;                                 (cred-fn creds))]
+;         ;(do (trace "user logged in")
+;         (workflows/make-auth user-record
+;                              {::friend/workflow :json-login
+;                               ::friend/redirect-on-auth? redirect-on-auth?})
+;         (login-failed req))))))
+
+
+
+
 (defn json-workflow
   [& {:keys [login-uri credential-fn login-failure-handler redirect-on-auth?] :as auth-config
       :or {redirect-on-auth? true}}]
       (fn   [{:keys [uri request-method body] :as req}]
-  (when (and (= uri (:login-uri (::friend/auth-config req)))
-             (= :post request-method)
-             (= "application/json" (:content-type req)))
-    (let [{:keys [username password] :as creds} (parse-json-stream body)
-          creds (with-meta creds  {::friend/workflow :json-login})
-          cred-fn (:credential-fn (::friend/auth-config req))]
-      ; (prn (and username password (cred-fn creds)))
-      (if-let [user-record (and username password
-                                (cred-fn creds))]
-        (workflows/make-auth user-record
-                             {::friend/workflow :json-login
-                              ::friend/redirect-on-auth? redirect-on-auth?})
-        (login-failed req))))))
+       (condp = uri
+        (:login-uri (::friend/auth-config req))
+        (if (and (= :post request-method)
+                 (= "application/json" (:content-type req)))
+        (let [{:keys [username password] :as creds} (parse-json-stream body)
+              creds (with-meta creds  {::friend/workflow :json-login})
+              cred-fn (:credential-fn (::friend/auth-config req))]
+            (if-let [user-record (and username password (cred-fn creds))]
+                    ;(do (trace "user logged in")
+                      (workflows/make-auth user-record
+                       {::friend/workflow :json-login
+                        ::friend/redirect-on-auth? redirect-on-auth?})
+                      (login-failed req))))
+        (:logout-uri (::friend/auth-config req))
+        (friend/logout*  {:status 200})
+        nil)
+    ))
 
 
 (defn friend-middleware
@@ -41,6 +66,7 @@
   [handler users]
   (let [auth-config {:credential-fn (partial creds/bcrypt-credential-fn users)
                      :redirect-on-auth? false
+                     :logout-uri "/logout"
                      :workflows
                   ;; Note that ordering matters here. Basic first.
                   [
@@ -48,10 +74,11 @@
                    ; (workflows/interactive-form)
                    (json-workflow)
                    ]}]
+     ; (derive ::admin ::user)
     (-> handler
         (friend/authenticate auth-config)
           (wrap-session)
-         ; (friend/requires-scheme-with-proxy :https)
+          ; (friend/requires-scheme-with-proxy :https)
         )))
 
 
@@ -88,3 +115,4 @@
 ; Date: Tue, 21 Jan 2014 19:33:18 GMT
 
 ; {"success":false,"message":"Not authorized!"}
+; $curl -b galletas -i http://localhost:8090/logout
