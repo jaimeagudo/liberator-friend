@@ -21,7 +21,6 @@
   ; (condp instance? body
   ;     java.lang.String body
   `(parse-stream (io/reader ~s) true))
-; (parse-stream (io/reader s)))
 
 
 (defn parse-json-body
