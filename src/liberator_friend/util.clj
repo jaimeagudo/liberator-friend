@@ -14,7 +14,7 @@
 
 ;; convert the body to a reader. Useful for testing in the repl
 ;; where setting the body to a string is much simpler.
-(defn- body-as-string
+(defn parse-json-body
   [ctx]
   (if-let [body (get-in ctx [:request :body])]
     (condp instance? body
@@ -28,7 +28,7 @@
     [context key]
   (when (#{:put :post} (get-in context [:request :request-method]))
     (try
-      (if-let [body (body-as-string context)]
+      (if-let [body (parse-json-body context)]
         [false {key body}]
         {:message "No body"})
       (catch Exception e

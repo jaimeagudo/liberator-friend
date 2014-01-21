@@ -1,20 +1,20 @@
 (ns liberator-friend.core
   "Core namespace for the liberator-friend post."
-  (:gen-class)
+  ; (:gen-class)
   (:use    [liberator-friend.util]
     [liberator-friend.users])
   (:require [cheshire.core :refer :all]
-            [cemerick.friend :as friend]
-            (cemerick.friend [workflows :as workflows]
-                             [credentials :as creds])
-            [compojure.handler :refer [api]]
-            [compojure.core :as compojure :refer (GET ANY defroutes)]
-            [liberator-friend.middleware.auth :as auth]
-            [clojure.contrib.string :as str]
-            [liberator-friend.resources :as r :refer [defresource]]
-            [org.httpkit.server :refer [run-server]]
-             [ring.middleware.reload :as rl]
-            ))
+    [cemerick.friend :as friend]
+    (cemerick.friend [workflows :as workflows]
+                     [credentials :as creds])
+    [compojure.handler :refer [api]]
+    [compojure.core :as compojure :refer (GET ANY defroutes)]
+    [liberator-friend.middleware.auth :as auth]
+    [liberator-friend.resources :as r :refer [defresource]]
+    [clojure.contrib.string :as str]
+    [org.httpkit.server :refer [run-server]]
+    [ring.middleware.reload :as rl]
+    ))
 
 ;; ## Site Resources
 
@@ -84,8 +84,14 @@
   (-> site-routes
     (auth/friend-middleware users)
        ; (friend/requires-scheme-with-proxy :https)
-       ; (ring-session/wrap-session)
+        ; (ring-session/wrap-session)
        (api)))
+
+
+
+
+
+
 
 ;; ## Server Lifecycle
 

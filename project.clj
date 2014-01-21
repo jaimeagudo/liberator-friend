@@ -13,5 +13,4 @@
                  [ring/ring-jetty-adapter "1.1.0"]
                  [ring/ring-devel "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
-                 ; [hiccup "1.0.1"]
                  ])
