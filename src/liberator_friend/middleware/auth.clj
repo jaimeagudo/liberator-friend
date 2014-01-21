@@ -1,14 +1,23 @@
 (ns liberator-friend.middleware.auth
   (:require
     [ring.middleware.keyword-params :as params]
-     [cheshire.core :refer :all]
-[liberator-friend.util]
-     ; [clojure.data.json :as json]
+    [cheshire.core :refer :all]
+    [liberator-friend.util]
+    [clojure.java.io :as io]
+    ; [clojure.data.json :as json]
     [cemerick.friend :as friend]
     (cemerick.friend [workflows :as workflows]
-                      [credentials :as creds]))
-  (:use [liberator-friend.util]))
+                     [credentials :as creds]))
+  (:use [ring.middleware.session]
+   [liberator-friend.util]))
 
+; (use 'ring.middleware.session
+     ; 'ring.util.response)
+
+; (defn handler [{session :session}]
+  ; (response (str "Hello " (:username session))))
+
+; (def app
 
 ;
 
@@ -41,12 +50,12 @@
 (generate-string 401)))
             ; (l/json-response 401)))
 
-(defn read-json
-  "Parses json, guarding against the empty case."
-  [s]
-  (if-let [s (not-empty s)]
-     (parse-string s)))
-      ; (json/read-json s)))
+; (defn read-json
+;   "Parses json, guarding against the empty case."
+;   [s]
+;   (if-let [s (not-empty s)]
+;      (parse-string s)))
+;       ; (json/read-json s)))
 
 
 ; (defn json-login
@@ -68,21 +77,27 @@
 
 
 (defn json-workflow
-  [& {:keys [login-uri credential-fn login-failure-handler redirect-on-auth?] :as form-config
+  [& {:keys [login-uri credential-fn login-failure-handler redirect-on-auth?] :as auth-config
       :or {redirect-on-auth? true}}]
       (fn   [{:keys [uri request-method body] :as req}]
   (when (and (= uri (:login-uri (::friend/auth-config req)))
              (= :post request-method)
              ; (= "application/json" (l/content-type req))
              )
-    (let [{:keys [username password] :as creds}  (parse-json-body body) ; (read-json (slurp body))
+; (prn (parse-stream (io/reader body) true))
+        ; (prn (:body (parse-json-body body))
+    (let [{:keys [username password] :as creds} (parse-json-stream body)
+           ; (parse-json-body body) ; (read-json (slurp body))
           creds (with-meta creds {::friend/workflow :json-login})
           cred-fn (:credential-fn (::friend/auth-config req))]
+      (prn (and username password
+                                (cred-fn creds)))
       (if-let [user-record (and username password
                                 (cred-fn creds))]
+
         (workflows/make-auth user-record
                              {::friend/workflow :json-login
-                              ::friend/redirect-on-auth? true})
+                              ::friend/redirect-on-auth? redirect-on-auth?})
         (login-failed req))))))
 
 
@@ -131,7 +146,8 @@
 (defn friend-middleware
   "Returns a middleware that enables authentication via Friend."
   [handler users]
-  (let [friend-m {:credential-fn (partial creds/bcrypt-credential-fn users)
+  (let [auth-config {:credential-fn (partial creds/bcrypt-credential-fn users)
+                     :redirect-on-auth? false
                   :workflows
                   ;; Note that ordering matters here. Basic first.
                   [
@@ -143,26 +159,41 @@
                    ; (json-login-workflow)
                    ]}]
     (-> handler
-        (friend/authenticate friend-m)
-        ; (friend/requires-scheme-with-proxy :https)
+
+        (friend/authenticate auth-config)
+          (wrap-session)
+ ; (friend/requires-scheme-with-proxy :https)
         )))
 
 
-; ;; curl -d '{"username": "jaime", "password": "password"}' -H "Content-Type:application/json" -i http://localhost:8090/login
-; ;; If redirect is set to true,
 
+
+
+
+; $ curl -c galletas -d '{"username": "jaime", "password": "password"}' -H "Content-Type:application/json" -i http://localhost:8090/login
 ; HTTP/1.1 303 See Other
-; Set-Cookie: ring-session=session%3Acc18a113-2798-4673-9a84-82af52e82bef;Path=/
-; Location: /profile
+; Set-Cookie: ring-session=1e76c828-e08a-4656-aae3-074ec1262a61;Path=/
+; Location: /
 ; Content-Length: 0
 ; Server: http-kit
-; Date: Tue, 19 Nov 2013 20:37:09 GMT
+; Date: Tue, 21 Jan 2014 19:31:01 GMT
 
-; ;; If it's set to false,
+; $ curl -b galletas -i http://localhost:8090/user
 ; HTTP/1.1 200 OK
-; Content-Type: application/json
-; Content-Length: 95
+; Vary: Accept
+; Content-Type: application/json;charset=UTF-8
+; Content-Length: 16
 ; Server: http-kit
-; Date: Tue, 19 Nov 2013 20:38:27 GMT
+; Date: Tue, 21 Jan 2014 19:31:07 GMT
 
-; {"ok":true,"reason":"Authentication succeeded! Save the cookie returned in the cookie header."}
+
+; "Welcome, user!
+
+; $ curl -b galletas -i http://localhost:8090/admin
+; HTTP/1.1 401 Unauthorized
+; Content-Type: application/json;charset=UTF-8
+; Content-Length: 45
+; Server: http-kit
+; Date: Tue, 21 Jan 2014 19:33:18 GMT
+
+; {"success":false,"message":"Not authorized!"}

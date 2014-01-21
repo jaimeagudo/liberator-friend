@@ -3,7 +3,8 @@
 
 ; "The Database"
 ; "dummy in-memory user database."
-(def users (atom {
+(def users ;(atom
+             {
 	"root" {
 		:username "root"
 		:password (hash-bcrypt "password")
@@ -14,7 +15,7 @@
     	:password (hash-bcrypt "password")
     	:roles #{:user}}
 })
-)
+; )
 
 ; (derive :admin :user)
 

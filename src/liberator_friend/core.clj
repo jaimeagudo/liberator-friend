@@ -45,8 +45,8 @@
   (GET "/user" [] user-resource)
 
 
-  (GET "/api/ping" ping)
-  (ANY "/session" session-resource)
+  ; (GET "/api/ping" ping)
+  ; (ANY "/session" session-resource)
   ; (GET "/api/session" json-auth/handle-session)
   ; (POST "/api/session" json-auth/handle-session)
   ; (DELETE "/api/session" json-auth/handle-session)
@@ -57,24 +57,24 @@
 
 
 
-(defresource session-resource
+; (defresource session-resource
 
-  ; :base (r/role-auth #{:user})
-  :allowed-methods [:get :post :delete]
-  :available-media-types ["application/json"]
-  :malformed? (fn [ctx] (parse-body ctx :parsed-body))
-  :handle-ok #((friend/current-authentication ))
-  :handle-created nil
-  :exists? (fn [ctx])
-  :post! (fn [ctx]
-    (let [username (ctx :parsed-body)
-          password (ctx :parsed-body)]
-          (if (not-any? str/blank? [username password])
-            (let [user (create-user username password false)]
-                ;; HERE IS WHERE YOU'D PUSH THE USER INTO YOUR DATABASES if desired
-                (friend/merge-authentication (:request ctx)  user))))) ;workflow-result
+;   ; :base (r/role-auth #{:user})
+;   :allowed-methods [:get :post :delete]
+;   :available-media-types ["application/json"]
+;   :malformed? (fn [ctx] (parse-body ctx :parsed-body))
+;   :handle-ok #((friend/current-authentication ))
+;   :handle-created nil
+;   :exists? (fn [ctx])
+;   :post! (fn [ctx]
+;     (let [username (ctx :parsed-body)
+;           password (ctx :parsed-body)]
+;           (if (not-any? str/blank? [username password])
+;             (let [user (create-user username password false)]
+;                 ;; HERE IS WHERE YOU'D PUSH THE USER INTO YOUR DATABASES if desired
+;                 (friend/merge-authentication (:request ctx)  user))))) ;workflow-result
 
-  :delete!  nil)
+;   :delete!  nil)
 
 
 
